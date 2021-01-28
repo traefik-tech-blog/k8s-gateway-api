@@ -1,0 +1,32 @@
+--- 
+apiVersion: networking.x-k8s.io/v1alpha1
+kind: Gateway
+metadata: 
+  name: traefik-http-gateway
+  namespace: default
+spec: 
+  gatewayClassName: traefik
+  listeners: 
+    - 
+      port: 8000
+      protocol: HTTP
+      routes: 
+        kind: HTTPRoute
+        namespaces: 
+          from: Same
+        selector: 
+          matchLabels: 
+            app: traefik
+    - 
+      port: 8443
+      protocol: HTTPS
+      routes: 
+        kind: HTTPRoute
+        selector: 
+          matchLabels: 
+            app: traefik
+      tls: 
+        certificateRef: 
+          group: core
+          kind: Secret
+          name: mysecret
