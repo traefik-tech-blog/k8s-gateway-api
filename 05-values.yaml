@@ -1,5 +1,7 @@
+# 05-values.yaml
+--- 
 experimental: 
-  kubernetesServiceAPI: 
+  kubernetesGateway: 
     appLabelSelector: traefik
     certificates:
       - 
