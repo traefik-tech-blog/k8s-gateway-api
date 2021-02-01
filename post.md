@@ -1,26 +1,29 @@
+# Getting Started with Traefik and the New Kubernetes Service APIs
+
 SOME IMAGE?
 
 As we already introduced in June last year, there has been a movement inside the Kubernetes Community to work on a next iteration for defining and managing Ingress Traffic. As a result, there is a new set of Service API which feature the so-called Gateway-AP to tackle that task. This post will feature an “how to use” approach of that set of APIs with Traefik. For more information about the whole standard on its own, you can find more information on the old post.
 
 ## Prerequisites
+
 * Kubernetes Cluster
 * Traefik official docs
 * Kubeconfig file to access your Kubernetes Cluster through `kubectl`
 
 Configuration files for this tutorial can be found here: https://github.com/traefik-tech-blog/k8s-service-apis
 
-
 ## Installing the CRDs
+
 To install the CRD’s, you can just use the current released version 0.10
 
-```
+``` bash
 kubectl apply -k "github.com/kubernetes-sigs/service-apis/config/crd?ref=v0.1.0"
 ```
 
 Install and configure Traefik to use Service APIs
 To install Traefik v2.4 (or later) and have it configured to enable the new provider, best way is to install Traefik through our helm chart
 
-```
+``` bash
 helm install traefik --set experimental.kubernetesGateway.enabled=true traefik 
 ```
 
@@ -30,9 +33,8 @@ That will install Traefik 2.4, enable the new provider and also make sure that t
 
 Then you can port forward to the dashboard to check if the provider is activated and ready to serve.
 
-```
+``` bash
 kubectl port-forward $(kubectl get pods --selector "app.kubernetes.io/name=traefik" --output=name) 9000:9000
-
 ```
 
 Your dashboard, should show all Kubernetes related providers like that then:
@@ -45,7 +47,7 @@ From here, we are ready to go.
 
 In order to have a target to route Traefik to, we will quickly install the famous whoami service in order to have something to use for testing purposes later.
 
-```
+``` yaml
 # 01-whoami.yaml
 ---
 kind: Deployment
@@ -86,11 +88,11 @@ spec:
 
 ```
 
-
 ## Simple Host
+
 Everything is set and ready now, to deploy our first simple `HTTPRoute` to see the action going.
 
-```
+``` yaml
 # 02-whoami-httproute.yaml  
 ---
 kind: HTTPRoute
@@ -118,7 +120,7 @@ This HTTPRoute will catch requests going on `whoami` and forward them to the ser
 
 If you know emit a request for that hostname, you will see something like this:
 
-```
+``` bash
 curl -H "Host: whoami" http://localhost
 Hostname: whoami-9cdc57b6d-pfpxs
 IP: 127.0.0.1
@@ -141,9 +143,10 @@ X-Real-Ip: 10.42.0.1
 ```
 
 ## Simple Host with Paths
+
 The example above can easily be enhanced to only react on a given subpath.
 
-```
+``` yaml
 # 03-whoami-httproute-paths.yaml
 --- 
 apiVersion: networking.x-k8s.io/v1alpha1
@@ -170,9 +173,9 @@ spec:
             value: /foo
 ```
 
-
 The result will look like that:
-```
+
+``` bash
 curl -H "Host: whoami" http://localhost/foo
 Hostname: whoami-9cdc57b6d-pfpxs
 IP: 127.0.0.1
@@ -191,14 +194,13 @@ X-Forwarded-Port: 80
 X-Forwarded-Proto: http
 X-Forwarded-Server: traefik-74d7f586dd-xxr7r
 X-Real-Ip: 10.42.0.1
-
 ```
 
 More information about what part of a request can be matched are visible on the official Service API documentation.
 TLS with static certificates
 Until here, we have created a simple HTTP Route. For the next step, we want to secure this route through TLS. For that, we need to create a secret first with a dummy certificate.
 
-```
+``` yaml
 # 04-tls-dummy-cert.yaml
 --- 
 apiVersion: v1
@@ -214,7 +216,7 @@ type: kubernetes.io/tls
 
 With that secret in place, we can start securing. First, we need to update the Gateway to create a TLS listener with that certificate. That is possible through the `certificates` option on the helm chart which we can use for upgrading
 
-```
+``` yaml
 # 05-values.yaml
 --- 
 experimental: 
@@ -228,13 +230,13 @@ experimental:
     enabled: true
 ```
 
-```
+``` bash
 helm upgrade traefik traefik/traefik -f values.yaml
 ```
 
 Once upgrades, lets see the result:
 
-```
+``` bash
 curl --insecure -H "Host: whoami" https://localhost/foo
 Hostname: whoami-9cdc57b6d-pfpxs
 IP: 127.0.0.1
@@ -263,8 +265,7 @@ The last feature we support out of the specification in terms of routing capabil
 
 For that, we need a second service to run first. For the sake of this example, we will quickly spawn an nginx:
 
-
-```
+``` yaml
 # 06-nginx.yaml
 ---
 kind: Deployment
@@ -306,7 +307,7 @@ spec:
 
 The HTTPRoute has a weight option, which we can utilize for that.
 
-```
+``` yaml
 # 07-whoami-nginx-canary.yaml
 --- 
 apiVersion: networking.x-k8s.io/v1alpha1
@@ -336,11 +337,12 @@ spec:
 Now, every fourth curl request will show a different result :-)
 
 ## Status Resources to the Rescue
-The Service API specification heavily utilizes Status Resources to show issues with your configuration. 
 
-Some can easily be reproduced when you use a wrong port on your Gateway or when you utilize a not yet implemented protocol which will be handled as an invalid value error 
+The Service API specification heavily utilizes Status Resources to show issues with your configuration.
 
-```
+Some can easily be reproduced when you use a wrong port on your Gateway or when you utilize a not yet implemented protocol which will be handled as an invalid value error:
+
+``` yaml
 --- 
 Spec: 
   Controller: traefik.io/gateway-controller
@@ -353,9 +355,10 @@ Status:
     Status: Unknown
     Type: InvalidParameters
 
-``` 
+```
+
 There are plenty more, so we recommend checking them out on the official documentation.
 
+## Known Limitations and Future
 
-## Known Limitations & Future
 Currently, our implementation is focussing on HTTP and HTTPS only. However, the spec also features TCP and in the future probably UDP as well which is something we will be working on. Also, we want to improve the need to know which ports Traefik has oben to do the exact matching on a Gateway Ressource. Also, more advanced cases such as traffic splitting are not yet implemented. Last but not least, there is some more logic required in terms of default values for extensions through configmaps. That's all on our list and will be improved eventually as the spec evolves.
