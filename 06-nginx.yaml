@@ -1,0 +1,36 @@
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: nginx
+
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: whoami
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+        - name: whoami
+          image: nginx
+          ports:
+            - containerPort: 80
+              name: http
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: whoami
+
+spec:
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: http
+  selector:
+    app: nginx

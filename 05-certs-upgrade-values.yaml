@@ -1,0 +1,10 @@
+--- 
+experimental: 
+  kubernetesServiceAPI: 
+    appLabelSelector: traefik
+    certificates:
+    - group: “core”
+      kind: “Secret”
+      # name: “my-secret”
+      name: "mysecret"
+    enabled: true
