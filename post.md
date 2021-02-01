@@ -17,11 +17,14 @@ To install the CRD’s, you can just use the current released version 0.10
 kubectl apply -k "github.com/kubernetes-sigs/service-apis/config/crd?ref=v0.1.0"
 ```
 
-Install and configure Traefik to use Service APIs
+33 Install and configure Traefik to use Service APIs
 To install Traefik v2.4 (or later) and have it configured to enable the new provider, best way is to install Traefik through our helm chart
 
+
 ```
-helm install traefik --set experimental.kubernetesGateway.enabled=true traefik 
+helm repo add traefik https://helm.traefik.io/traefik
+helm repo update
+helm install traefik --set experimental.kubernetesGateway.enabled=true traefik/traefik
 ```
 
 More customization options for the installation, such as the labeSelector or TLS Certificates (which we see later) are visible in the values file. (put link).
@@ -229,7 +232,7 @@ experimental:
 ```
 
 ```
-helm upgrade traefik traefik/traefik -f values.yaml
+helm upgrade traefik -f values.yaml traefik/traefik
 ```
 
 Once upgrades, lets see the result:
