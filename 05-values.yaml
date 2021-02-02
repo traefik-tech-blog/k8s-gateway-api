@@ -1,0 +1,11 @@
+# 05-values.yaml
+--- 
+experimental: 
+  kubernetesGateway: 
+    appLabelSelector: traefik
+    certificates:
+      - 
+        group: "core"
+        kind: "Secret"
+        name: "mysecret"
+    enabled: true

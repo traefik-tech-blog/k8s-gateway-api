@@ -8,14 +8,14 @@ spec:
   replicas: 2
   selector:
     matchLabels:
-      app: whoami
+      app: nginx
   template:
     metadata:
       labels:
         app: nginx
     spec:
       containers:
-        - name: whoami
+        - name: nginx
           image: nginx
           ports:
             - containerPort: 80
@@ -25,8 +25,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: whoami
-
+  name: nginx
 spec:
   ports:
     - protocol: TCP
