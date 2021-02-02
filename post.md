@@ -1,6 +1,6 @@
 # Getting Started with Traefik and the New Kubernetes Service APIs
 
-SOME IMAGE?
+[SOME IMAGE?]
 
 As we already introduced in June last year, there has been a movement inside the Kubernetes Community to work on a next iteration for defining and managing Ingress Traffic. As a result, there is a new set of Service API which feature the so-called Gateway-AP to tackle that task. This post will feature an “how to use” approach of that set of APIs with Traefik. For more information about the whole standard on its own, you can find more information on the old post.
 
@@ -20,7 +20,8 @@ To install the CRD’s, you can just use the current released version 0.10
 kubectl apply -k "github.com/kubernetes-sigs/service-apis/config/crd?ref=v0.1.0"
 ```
 
-33 Install and configure Traefik to use Service APIs
+## Install and Configure Traefik to Use Service APIs
+
 To install Traefik v2.4 (or later) and have it configured to enable the new provider, best way is to install Traefik through our helm chart
 
 ``` bash
@@ -45,7 +46,7 @@ Your dashboard, should show all Kubernetes related providers like that then:
 
 From here, we are ready to go.
 
-## Setup a dummy service
+## Setup a Dummy Service
 
 In order to have a target to route Traefik to, we will quickly install the famous whoami service in order to have something to use for testing purposes later.
 
@@ -199,7 +200,9 @@ X-Real-Ip: 10.42.0.1
 ```
 
 More information about what part of a request can be matched are visible on the official Service API documentation.
-TLS with static certificates
+
+## TLS with Static Certificates
+
 Until here, we have created a simple HTTP Route. For the next step, we want to secure this route through TLS. For that, we need to create a secret first with a dummy certificate.
 
 ``` yaml
