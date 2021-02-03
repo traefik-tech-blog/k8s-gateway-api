@@ -25,7 +25,7 @@ git clone https://github.com/traefik-tech-blog/k8s-service-apis
 
 At the present time, the Service APIs are not installed on Kubernetes clusters by default. Support for them depends upon a set of custom resource definitions (CRDs), and you should make sure these are installed before enabling support in Traefik.
 
-It's a safe bet to use the current released version 0.10:
+It's a safe bet to use the current released version, 0.10:
 
 ``` bash
 kubectl apply -k "github.com/kubernetes-sigs/service-apis/config/crd?ref=v0.1.0"
@@ -41,7 +41,7 @@ helm repo update
 helm install traefik --set experimental.kubernetesGateway.enabled=true traefik/traefik
 ```
 
-Note the `--set experimental.kubernetesGateway.enabled=true` flag. This procedure will install Traefik 2.4, enable the new Service APIs provider, and also create GatewayClasses and a Gateway instance.
+Note the `--set experimental.kubernetesGateway.enabled=true` flag. This will install Traefik 2.4, enable the new Service APIs provider, and also create GatewayClasses and a Gateway instance.
 
 More customization options for the installation, such as the label selector or TLS certificates (which you'll use later in this demonstration) are visible in the Helm chart's [values file](https://github.com/traefik/traefik-helm-chart/blob/master/traefik/values.yaml).
 
@@ -101,7 +101,7 @@ spec:
 
 ```
 
-## Simple Host
+## Deploying a Simple Host
 
 Now that everything is setup, you're ready to start the action the Service APIs way. Where previously you would have created an Ingress or IngressRoute, here you'll deploy your first simple HTTPRoute:
 
@@ -354,7 +354,7 @@ Now, you'll once again be able to access your whoami service at `http://localhos
 
 ## Status Resources to the Rescue
 
-The Service API specification heavily utilizes Status Resources to show issues with your configuration.
+The Service API specification makes heavy use of Status Resources to show issues with your configuration.
 
 Some can easily be reproduced when you use a wrong port on your Gateway or when you utilize a not yet implemented protocol which will be handled as an invalid value error:
 
