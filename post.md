@@ -352,33 +352,8 @@ spec:
 
 Now, you'll once again be able to access your whoami service at `http://localhost` (without the `foo/` path suffix), but 25% of the time you'll see a response from Nginx, rather than from whoami.
 
-## Status Resources to the Rescue
-
-The Service API specification makes heavy use of Status Resources to show issues with your configuration.
-
-Some can easily be reproduced when you use a wrong port on your Gateway or when you utilize a not yet implemented protocol which will be handled as an invalid value error:
-
-``` yaml
---- 
-Spec: 
-  Controller: traefik.io/gateway-controller
-Status: 
-  Conditions: 
-    ? "Last Transition Time"
-    : 2021-01-27 15:22:07 +00:00
-    Message: "Handled by Traefik controller"
-    Reason: Handled
-    Status: Unknown
-    Type: InvalidParameters
-
-```
-
-There are plenty more, so we recommend checking them out in the official documentation.
-
 ## Known Limitations and the Future
 
 Currently, Traefik's implementation of the Service APIs is focused on HTTP and HTTPS only. However, the spec also features TCP and in the future it will probably support UDP, as well. These are features the Traefik team will be working on.
-
-We plan to make other improvements, as well. For example, we want to remove the need to know which ports Traefik has open to do the exact matching on a Gateway resource. Also, more advanced cases, such as traffic splitting, are not yet implemented. Last but not least, there is some more logic required to support default values for extensions through ConfigMaps. All of these are on our list and will be improved eventually as the spec evolves.
 
 In the meantime, you can get started using the Kubernetes Service APIs with Traefik 2.4 today. Explore away, and be sure to share your feedback in the [community forums](https://community.traefik.io/c/traefik/).
