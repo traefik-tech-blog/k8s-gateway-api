@@ -209,7 +209,7 @@ X-Forwarded-Server: traefik-74d7f586dd-xxr7r
 X-Real-Ip: 10.42.0.1
 ```
 
-More information about what partss of a request can be matched can be found in the [official Service API documentation](https://kubernetes-sigs.github.io/service-apis/httproute/).
+More information about what parts of a request can be matched can be found in the [official Service API documentation](https://kubernetes-sigs.github.io/service-apis/httproute/).
 
 ## TLS with Static Certificates
 
@@ -379,6 +379,6 @@ There are plenty more, so we recommend checking them out in the official documen
 
 Currently, Traefik's implementation of the Service APIs is focused on HTTP and HTTPS only. However, the spec also features TCP and in the future it will probably support UDP, as well. These are features the Traefik team will be working on.
 
-We plan to make other improvements, as well. For example, we want to improve the need to know which ports Traefik has open to do the exact matching on a Gateway resource. Also, more advanced cases, such as traffic splitting, are not yet implemented. Last but not least, there is some more logic required to support default values for extensions through ConfigMaps. All of these are on our list and will be improved eventually as the spec evolves.
+We plan to make other improvements, as well. For example, we want to remove the need to know which ports Traefik has open to do the exact matching on a Gateway resource. Also, more advanced cases, such as traffic splitting, are not yet implemented. Last but not least, there is some more logic required to support default values for extensions through ConfigMaps. All of these are on our list and will be improved eventually as the spec evolves.
 
 In the meantime, you can get started using the Kubernetes Service APIs with Traefik 2.4 today. Explore away, and be sure to share your feedback in the [community forums](https://community.traefik.io/c/traefik/).
