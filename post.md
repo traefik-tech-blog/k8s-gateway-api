@@ -2,27 +2,38 @@
 
 [SOME IMAGE?]
 
-As we already introduced in June last year, there has been a movement inside the Kubernetes Community to work on a next iteration for defining and managing Ingress Traffic. As a result, there is a new set of Service API which feature the so-called Gateway-AP to tackle that task. This post will feature an “how to use” approach of that set of APIs with Traefik. For more information about the whole standard on its own, you can find more information on the old post.
+It was in June of last year that we [first discussed](https://traefik.io/blog/kubernetes-ingress-service-api-demystified/) the movement inside the Kubernetes community to develop an improved method of defining and managing ingress traffic for Kubernetes. That effort bore fruit in the form of the new [Service APIs](https://kubernetes-sigs.github.io/service-apis/).
+
+We introduced initial support for the Service APIs in [Traefik 2.4](https://traefik.io/blog/announcing-traefik-2-4/) in January. This post will demonstrate how to use the new Gateway, GatewayClass, and HTTPRoute APIs with Traefik to route requests to services.
 
 ## Prerequisites
 
-* Kubernetes Cluster
-* Traefik official docs
-* Kubeconfig file to access your Kubernetes Cluster through `kubectl`
+Of course, you'll need some things before you begin:
 
-Configuration files for this tutorial can be found here: https://github.com/traefik-tech-blog/k8s-service-apis
+* A working Kubernetes cluster, which this guide assumes is running on `localhost`
+* The `kubectl` command-line tool, installed and configured to access your cluster
 
-## Installing the CRDs
+You **do not** need to have Traefik installed on your cluster before you begin. You'll take care of that in the next few steps.
 
-To install the CRD’s, you can just use the current released version 0.10
+You'll also want the set of configuration files that accompanies this post, which are available on GitHub. Clone the repository like so:
+
+``` bash
+git clone https://github.com/traefik-tech-blog/k8s-service-apis
+```
+
+### Installing the CRDs
+
+At the present time, the Service APIs are not installed on Kubernetes clusters by default. Support for them depends upon a set of custom resource definitions (CRDs), and you should make sure these are installed before enabling support in Traefik.
+
+It's a safe bet to use the current released version, 0.10:
 
 ``` bash
 kubectl apply -k "github.com/kubernetes-sigs/service-apis/config/crd?ref=v0.1.0"
 ```
 
-## Install and Configure Traefik to Use Service APIs
+### Install and Configure Traefik to Use Service APIs
 
-To install Traefik v2.4 (or later) and have it configured to enable the new provider, best way is to install Traefik through our helm chart
+To install Traefik v2.4 (or later) and have it configured to enable the new provider, the best way is to use the official Helm chart:
 
 ``` bash
 helm repo add traefik https://helm.traefik.io/traefik
@@ -30,25 +41,24 @@ helm repo update
 helm install traefik --set experimental.kubernetesGateway.enabled=true traefik/traefik
 ```
 
-More customization options for the installation, such as the labeSelector or TLS Certificates (which we see later) are visible in the values file. (put link).
+Note the `--set experimental.kubernetesGateway.enabled=true` flag. This will install Traefik 2.4, enable the new Service APIs provider, and also create GatewayClasses and a Gateway instance.
 
-That will install Traefik 2.4, enable the new provider and also make sure that the creation of GatewayClasses and a GateWay instance is taken care of.
+More customization options for the installation, such as the label selector or TLS certificates (which you'll use later in this demonstration) are visible in the Helm chart's [values file](https://github.com/traefik/traefik-helm-chart/blob/master/traefik/values.yaml).
 
-Then you can port forward to the dashboard to check if the provider is activated and ready to serve.
+
+To verify that the new features are enabled, use port forwarding to expose the Traefik dashboard:
 
 ``` bash
 kubectl port-forward $(kubectl get pods --selector "app.kubernetes.io/name=traefik" --output=name) 9000:9000
 ```
 
-Your dashboard, should show all Kubernetes related providers like that then:
+ When you use your browser to access the dashboard via `http://localhost:9000/dashboard/`, you should see that the KubernetesGateway provider is activated and ready to serve:
 
 ![](image1.png)
 
-From here, we are ready to go.
-
 ## Setup a Dummy Service
 
-In order to have a target to route Traefik to, we will quickly install the famous whoami service in order to have something to use for testing purposes later.
+You'll need a target where Traefik can route requests, so quickly install the famous whoami service using `kubectl apply -f`, in order to have something to use for testing purposes:
 
 ``` yaml
 # 01-whoami.yaml
@@ -91,9 +101,9 @@ spec:
 
 ```
 
-## Simple Host
+## Deploying a Simple Host
 
-Everything is set and ready now, to deploy our first simple `HTTPRoute` to see the action going.
+Now that everything is setup, you're ready to start the action the Service APIs way. Where previously you would have created an Ingress or IngressRoute, here you'll deploy your first simple HTTPRoute:
 
 ``` yaml
 # 02-whoami-httproute.yaml  
@@ -119,9 +129,7 @@ spec:
           weight: 1
 ```
 
-This HTTPRoute will catch requests going on `whoami` and forward them to the service, which is our simple whoami service as mentioned above. All of that is possible through the labelSelector of `app: traefik`. This is set during the installation phase mentioned above and can be customized with the Helm chart.
-
-If you know emit a request for that hostname, you will see something like this:
+This HTTPRoute will catch requests made to the `whoami` hostname and forward them to the whoami service you deployed earlier. If you now make a request for that hostname, you will see typical whoami output, which looks something like this:
 
 ``` bash
 curl -H "Host: whoami" http://localhost
@@ -145,9 +153,11 @@ X-Real-Ip: 10.42.0.1
 
 ```
 
+Pay attention to the `app: traefik` label selector, which ensures that requests are routed to your Traefik instance. This is the default label that is set during the installation phase described above, but it can also be customized via the Helm chart.
+
 ## Simple Host with Paths
 
-The example above can easily be enhanced to only react on a given subpath.
+The example above can easily be enhanced to only react on a given subpath:
 
 ``` yaml
 # 03-whoami-httproute-paths.yaml
@@ -176,7 +186,7 @@ spec:
             value: /foo
 ```
 
-The result will look like that:
+With the modified HTTPRoute, you'll see that the previous request now returns a 404 error, while requesting the `/foo` path suffix returns success:
 
 ``` bash
 curl -H "Host: whoami" http://localhost/foo
@@ -199,11 +209,12 @@ X-Forwarded-Server: traefik-74d7f586dd-xxr7r
 X-Real-Ip: 10.42.0.1
 ```
 
-More information about what part of a request can be matched are visible on the official Service API documentation.
+More information about what parts of a request can be matched can be found in the [official Service API documentation](https://kubernetes-sigs.github.io/service-apis/httproute/).
 
 ## TLS with Static Certificates
 
-Until here, we have created a simple HTTP Route. For the next step, we want to secure this route through TLS. For that, we need to create a secret first with a dummy certificate.
+So far, you have created a simple HTTPRoute. For the next step, you'll want to secure this route through TLS. For that, you need to create a Kubernetes Secret first with a dummy certificate. You'll find one included in the configuration files in this post's GitHub repository:
+
 
 ``` yaml
 # 04-tls-dummy-cert.yaml
@@ -219,7 +230,11 @@ metadata:
 type: kubernetes.io/tls
 ```
 
-With that secret in place, we can start securing. First, we need to update the Gateway to create a TLS listener with that certificate. That is possible through the `certificates` option on the helm chart which we can use for upgrading
+With that secret in place, you can start securing. First, you must reconfigure the Gateway to create a TLS listener with `mysecret` certificate. You can achieve this by using the `upgrade` option with the Helm chart to add a `certificates` section to your Traefik configuration:
+
+``` bash
+helm upgrade traefik -f values.yaml traefik/traefik
+```
 
 ``` yaml
 # 05-values.yaml
@@ -235,11 +250,7 @@ experimental:
     enabled: true
 ```
 
-``` bash
-helm upgrade traefik -f values.yaml traefik/traefik
-```
-
-Once upgrades, lets see the result:
+Once Traefik has restarted, you can check the results. The same HTTPRoute is still in effect, only now you can access it with HTTPS:
 
 ``` bash
 curl --insecure -H "Host: whoami" https://localhost/foo
@@ -262,13 +273,13 @@ X-Forwarded-Server: traefik-74d7f586dd-xxr7r
 X-Real-Ip: 10.42.0.1
 ```
 
-That's it :)
+Note that you must pass the `--insecure` parameter to `curl` in order to use the unsigned dummy certificate.
 
 ## Canary Releases
 
-The last feature we support out of the specification in terms of routing capabilities, is canary releases!
+Another feature that Traefik 2.4 can support via the Service API specification is canary releases. Suppose you want to run two different services (or two versions of the same service) on one endpoint and route a portion of requests to each. You can achieve this by modifying your HTTPRoute.
 
-For that, we need a second service to run first. For the sake of this example, we will quickly spawn an nginx:
+First, you'll need a second service to run. For the sake of this example, you can quickly spawn an instance of Nginx:
 
 ``` yaml
 # 06-nginx.yaml
@@ -310,7 +321,7 @@ spec:
     app: nginx
 ```
 
-The HTTPRoute has a weight option, which we can utilize for that.
+The HTTPRoute resource has a weight option, and you can assign different values to each of the two services:
 
 ``` yaml
 # 07-whoami-nginx-canary.yaml
@@ -339,31 +350,10 @@ spec:
 
 ```
 
-Now, every fourth curl request will show a different result :-)
+Now, you'll once again be able to access your whoami service at `http://localhost` (without the `foo/` path suffix), but 25% of the time you'll see a response from Nginx, rather than from whoami.
 
-## Status Resources to the Rescue
+## Known Limitations and the Future
 
-The Service API specification heavily utilizes Status Resources to show issues with your configuration.
+Currently, Traefik's implementation of the Service APIs is focused on HTTP and HTTPS only. However, the spec also features TCP and in the future it will probably support UDP, as well. These are features the Traefik team will be working on.
 
-Some can easily be reproduced when you use a wrong port on your Gateway or when you utilize a not yet implemented protocol which will be handled as an invalid value error:
-
-``` yaml
---- 
-Spec: 
-  Controller: traefik.io/gateway-controller
-Status: 
-  Conditions: 
-    ? "Last Transition Time"
-    : 2021-01-27 15:22:07 +00:00
-    Message: "Handled by Traefik controller"
-    Reason: Handled
-    Status: Unknown
-    Type: InvalidParameters
-
-```
-
-There are plenty more, so we recommend checking them out on the official documentation.
-
-## Known Limitations and Future
-
-Currently, our implementation is focussing on HTTP and HTTPS only. However, the spec also features TCP and in the future probably UDP as well which is something we will be working on. Also, we want to improve the need to know which ports Traefik has oben to do the exact matching on a Gateway Ressource. Also, more advanced cases such as traffic splitting are not yet implemented. Last but not least, there is some more logic required in terms of default values for extensions through configmaps. That's all on our list and will be improved eventually as the spec evolves.
+In the meantime, you can get started using the Kubernetes Service APIs with Traefik 2.4 today. Explore away, and be sure to share your feedback in the [community forums](https://community.traefik.io/c/traefik/).
