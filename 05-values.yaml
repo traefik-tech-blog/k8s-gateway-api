@@ -4,8 +4,7 @@ experimental:
   kubernetesGateway: 
     appLabelSelector: traefik
     certificates:
-      - 
-        group: "core"
+      - group: "core"
         kind: "Secret"
         name: "mysecret"
     enabled: true
