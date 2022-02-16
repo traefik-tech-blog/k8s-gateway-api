@@ -1,5 +1,5 @@
 --- 
-apiVersion: networking.x-k8s.io/v1alpha1
+apiVersion: gateway.networking.k8s.io/v1alpha2
 kind: HTTPRoute
 metadata: 
   labels: 
@@ -11,12 +11,12 @@ spec:
     - whoami
   rules: 
     - 
-      forwardTo: 
+      backendRefs: 
         - 
           port: 80
-          serviceName: whoami
+          name: whoami
           weight: 3
         - 
           port: 80
-          serviceName: nginx
+          name: nginx
           weight: 1
