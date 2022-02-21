@@ -1,6 +1,6 @@
 ---
-kind: Deployment
 apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: whoami
 
@@ -28,9 +28,9 @@ metadata:
   name: whoami
 
 spec:
-  ports:
-    - protocol: TCP
-      port: 80
-      targetPort: http
   selector:
     app: whoami
+
+  ports:
+    - port: 80
+      targetPort: http

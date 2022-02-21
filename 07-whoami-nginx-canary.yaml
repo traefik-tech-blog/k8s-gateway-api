@@ -1,22 +1,23 @@
---- 
+---
 apiVersion: gateway.networking.k8s.io/v1alpha2
 kind: HTTPRoute
-metadata: 
-  labels: 
-    app: traefik
+metadata:
   name: http-app-1
   namespace: default
-spec: 
-  hostnames: 
+
+spec:
+  parentRefs:
+    - name: traefik-gateway
+
+  hostnames:
     - whoami
-  rules: 
-    - 
-      backendRefs: 
-        - 
+
+  rules:
+    - backendRefs:
+        - name: whoami
           port: 80
-          name: whoami
           weight: 3
-        - 
+
+        - name: nginx
           port: 80
-          name: nginx
           weight: 1
